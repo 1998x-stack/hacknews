@@ -1,0 +1,11 @@
+requests
+schedule
+markdown
+fake-headers
+newspaper3k
+readability-lxml
+gne
+PyMuPDF
+pandas
+jieba
+certifi
