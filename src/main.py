@@ -27,7 +27,7 @@ def main():
             url = news.get('url', '')
             if url:
                 text = content_extractor.extract_content(url, 'en')
-                news['text'] = news.get('text', '') + '\n' + text
+                news['text'] = news.get('text', '') + '\n\n' + text
                 logger.log_info(f"新闻内容已提取: {url}")
         body = MarkdownFormatter.format_news(news_list)
         subject = f" 《Hacker News 最新新闻》 - ({time.strftime('%Y-%m-%d %H:%M')})"

@@ -143,7 +143,8 @@ class ContentExtractor:
                     self.logger.log_info(f"【readability】Successfully extracted content from {url}")
                     self.quality_dict['readability'] = self.quality_dict.get('readability', 0) + 1
         
-        return self.text_cleaner.clean_text(content)
+        # return self.text_cleaner.clean_text(content)
+        return content
             
     def extract_content_by_readability(self, html):
         try:
