@@ -10,7 +10,6 @@ on:
     
 jobs:
   run-python-script:
-    name: Run Python Script
     runs-on: ubuntu-latest
     steps:
       # 第一步：检出代码
@@ -30,5 +29,12 @@ jobs:
 
       # 第四步：运行脚本
       - name: Run script
+        env:
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          TO_EMAILS: ${{ secrets.TO_EMAILS }}
+          EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          PROXY: ${{ secrets.PROXY }}
         run: |
           python -m src.main
