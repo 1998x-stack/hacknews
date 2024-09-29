@@ -9,3 +9,4 @@ PyMuPDF
 pandas
 jieba
 certifi
+jieba

@@ -29,7 +29,7 @@ class MarkdownFormatter:
             title = news.get('title', '无标题')
             url = news.get('url', f"https://news.ycombinator.com/item?id={news.get('id')}")
             markdown_lines.append(f"### [{title}]({url})\n")
-            markdown_lines.append('')
+            markdown_lines.append(f'> {news.get("text", "")} \n')
             markdown_lines.append("\n\n---\n\n")
             
         markdown_content = '\n'.join(markdown_lines)
