@@ -9,4 +9,4 @@ PyMuPDF
 pandas
 jieba
 certifi
-jieba
+lxml[html_clean]
