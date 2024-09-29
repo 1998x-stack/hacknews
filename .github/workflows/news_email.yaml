@@ -30,11 +30,11 @@ jobs:
       # 第四步：运行脚本
       - name: Run script
         env:
-          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          TO_EMAILS: ${{ secrets.TO_EMAILS }}
-          EMAIL_USERNAME: ${{ secrets.EMAIL_USERNAME }}
+          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
           PROXY: ${{ secrets.PROXY }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          TO_EMAILS: ${{ secrets.TO_EMAILS }}
         run: |
           python -m src.main

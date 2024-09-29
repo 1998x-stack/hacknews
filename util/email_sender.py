@@ -81,6 +81,7 @@ class EmailSender:
         try:
             with smtplib.SMTP(self.smtp_server, self.smtp_port) as server:
                 server.starttls()  # 开启 TLS 加密
+                logger.log_info(f"已连接到 SMTP 服务器。 username: {self.username}")
                 server.login(self.username, self.password)  # 登录邮箱
                 server.sendmail(self.username, to_emails, message.as_string())
                 logger.log_info(f"邮件已发送至: {to_emails}")
