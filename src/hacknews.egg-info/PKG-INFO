@@ -1,0 +1,16 @@
+Metadata-Version: 2.4
+Name: hacknews
+Version: 2.0.0
+Summary: Hacker News email digest
+Requires-Python: >=3.10
+Requires-Dist: requests
+Requires-Dist: newspaper3k
+Requires-Dist: readability-lxml
+Requires-Dist: gne
+Requires-Dist: PyMuPDF
+Requires-Dist: markdown
+Requires-Dist: certifi
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: mypy>=1.0; extra == "dev"
+Requires-Dist: ruff>=0.1; extra == "dev"

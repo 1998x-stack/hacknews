@@ -1,0 +1,91 @@
+name: Hacker News Digest
+
+on:
+  schedule:
+    - cron: '40 13 * * *'
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[dev]'
+
+      - name: Lint
+        run: ruff check src/hacknews tests
+
+      - name: Type check
+        run: mypy src/hacknews
+
+      - name: Test
+        run: pytest tests/ -v
+
+  scrape:
+    needs: test
+    runs-on: ubuntu-latest
+    env:
+      EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      TO_EMAILS: ${{ secrets.TO_EMAILS }}
+      PROXY: ${{ secrets.PROXY }}
+      HN_TOP_N: '10'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Scrape
+        run: python -m hacknews scrape
+
+      - name: Upload data
+        uses: actions/upload-artifact@v4
+        with:
+          name: hn-digest
+          path: data/
+          retention-days: 7
+
+  send:
+    needs: scrape
+    runs-on: ubuntu-latest
+    env:
+      EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+      SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      TO_EMAILS: ${{ secrets.TO_EMAILS }}
+      PROXY: ${{ secrets.PROXY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+
+      - name: Download data
+        uses: actions/download-artifact@v4
+        with:
+          name: hn-digest
+          path: data/
+
+      - name: Send
+        run: python -m hacknews send

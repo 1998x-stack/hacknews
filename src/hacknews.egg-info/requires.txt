@@ -1,0 +1,12 @@
+requests
+newspaper3k
+readability-lxml
+gne
+PyMuPDF
+markdown
+certifi
+
+[dev]
+pytest>=7.0
+mypy>=1.0
+ruff>=0.1
