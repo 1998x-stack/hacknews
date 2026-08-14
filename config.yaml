@@ -1,0 +1,35 @@
+settings:
+  timezone: "UTC"
+  log_level: "INFO"
+  max_recipients_per_scan: 100
+
+recipients:
+  - name: "Jane"
+    email: "jane@example.com"
+
+ops:
+  alert_emails: ["ops-alerts@example.com"]
+  min_alert_interval_minutes: 60
+
+rules_defaults:
+  min_score: 0
+  min_comments: 0
+  max_age_hours: 24
+  top_n: 10
+  keywords_include: []
+  keywords_exclude: []
+  include_self_text: true
+
+jobs:
+  - name: "morning_digest"
+    cron: "0 8 * * *"
+    timezone: "Asia/Shanghai"
+    subject: "Morning Hacker News Digest"
+    rules:
+      top_n: 5
+      keywords_include: ["AI", "LLM", "Rust"]
+  - name: "evening_top10"
+    cron: "0 20 * * *"
+    subject: "Evening Hacker News Digest"
+    rules:
+      min_score: 200

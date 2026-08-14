@@ -4,3 +4,5 @@ logs/*
 .venv/
 .worktrees/
 *.egg-info/
+.env
+state/

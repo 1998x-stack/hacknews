@@ -1,90 +1,90 @@
-# Hacker News 邮件推送项目
+# HackNews
 
-## 简介
+Scheduled Hacker News email digests delivered by email. Production-grade:
+a resilient HN API client, configurable selection rules, cron scheduling
+(in-process or via CI), structured JSON logs, SMTP sending with ops alert
+emails, and a readiness/last-success signal. Runs as a containerized
+long-lived service or as a one-shot job (e.g. GitHub Actions).
 
-该项目每隔 30 分钟从 Hacker News 获取最新新闻，并通过电子邮件发送，邮件内容采用美观的 Markdown 模板。
+No external article scraping — each digest is built purely from Hacker News
+metadata: title, link, score, comment count, age, author, domain, and
+Ask/Show self-text.
 
-## 文件结构
-
-```
-project/
-├── .github/
-│   └── workflows/
-│       └── news_email.yml
-├── src/
-│   ├── email_sender.py
-│   ├── hacker_news_fetcher.py
-│   ├── markdown_formatter.py
-│   ├── news_email_scheduler.py
-│   └── main.py
-├── tests/
-│   ├── __init__.py
-│   ├── test_email_sender.py
-│   ├── test_hacker_news_fetcher.py
-│   ├── test_markdown_formatter.py
-│   └── test_news_email_scheduler.py
-├── requirements.txt
-└── README.md
-```
-
-## 安装依赖
-
-在项目根目录下，运行以下命令：
+## Install
 
 ```bash
-pip install -r requirements.txt
+python3.12 -m venv .venv
+.venv/bin/pip install -e ".[dev]"
 ```
 
-## 配置环境变量
+## Layout
 
-在运行程序前，需要设置以下环境变量：
+```
+src/hacknews/
+    models.py          pydantic domain + config models
+    config.py          YAML + env -> validated AppConfig
+    logging_setup.py   structured JSON logging to stdout
+    hn_client.py       resilient HN API client (retries/backoff)
+    selector.py        apply per-job selection rules
+    digest_builder.py  build HTML + plaintext digest
+    email_sender.py    SMTP send with bounded retries
+    ops.py             ops alerts + last-success state
+    pipeline.py        orchestrate fetch -> select -> build -> send -> record
+    scheduler.py       in-process cron scheduler (APScheduler)
+    health.py          /healthz endpoint
+    cli.py             entry points (doctor / run / readiness / serve)
+```
 
-- `SMTP_SERVER`: SMTP 服务器地址，例如 `smtp.gmail.com`
-- `SMTP_PORT`: SMTP 服务器端口，例如 `587`
-- `EMAIL_USERNAME`: 发件人邮箱
-- `EMAIL_PASSWORD`: 发件人邮箱密码或应用专用密码
-- `TO_EMAILS`: 收件人邮箱列表，逗号分隔，例如 `email1@example.com,email2@example.com`
+The same pipeline runs as a long-lived service (`serve`) or a one-shot job
+(`run <job>`).
 
-在 Linux/Mac 上，可以使用以下命令：
+## Quickstart
 
 ```bash
-export SMTP_SERVER='smtp.gmail.com'
-export SMTP_PORT='587'
-export EMAIL_USERNAME='your_email@example.com'
-export EMAIL_PASSWORD='your_password'
-export TO_EMAILS='recipient1@example.com,recipient2@example.com'
+.venv/bin/hacknews doctor               # validate config, print report
+.venv/bin/hacknews run morning_digest   # run one digest and exit
+.venv/bin/hacknews readiness            # 0 if all jobs fresh, else 1 + stale list
+.venv/bin/hacknews serve                # cron scheduler + /healthz on :8080
 ```
 
-## 运行单元测试
+## Configuration
 
-在项目根目录下，运行以下命令执行所有测试：
+Structure lives in `config.yaml`; **secrets only in the environment**.
+
+`config.yaml` sections: `settings` (timezone, log level),
+`recipients` (who receives digests), `ops` (alert email + throttle),
+`jobs` (cron-scheduled deliveries, each with optional `rules`), and
+`rules_defaults` (merged into every job).
+
+Selection rules per job: `min_score`, `min_comments`, `max_age_hours`,
+`top_n`, `keywords_include`, `keywords_exclude`, `include_self_text`.
+
+Environment variables:
+
+| Variable | Purpose |
+|----------|---------|
+| `SMTP_HOST` | SMTP server (required to send) |
+| `SMTP_PORT` | SMTP port, default `587` |
+| `EMAIL_FROM` | Sender address / login user |
+| `EMAIL_FROM_PASSWORD` | Sender password / app password |
+| `PROXY` | Optional HTTP(S) proxy for HN fetch |
+| `TZ` | Overrides `settings.timezone` |
+| `LOG_LEVEL` | Overrides `settings.log_level` |
+| `TO_EMAILS` | Comma-separated recipient override (e.g. CI trigger) |
+
+Every job: fetch → select → build digest → SMTP send → record last-success.
+On failure it logs a structured error, sends a throttled ops alert email, and
+does not record success — so a silent miss is impossible.
+
+## Docker / deploy
 
 ```bash
-python -m unittest discover -s tests
+docker compose up --build   # local run (cron + healthz, ports 8080)
 ```
 
-## 运行程序
+`Dockerfile` runs as non-root with a `HEALTHCHECK` against `/healthz`.
+Persist the `state/` directory (last-success JSON) across restarts.
 
-```bash
-python src/main.py
-```
-
-## 使用 GitHub Actions
-
-将 `.github/workflows/news_email.yml` 文件添加到你的仓库。
-
-在 GitHub 仓库的设置中，添加以下 Secrets：
-
-- `SMTP_SERVER`
-- `SMTP_PORT`
-- `EMAIL_USERNAME`
-- `EMAIL_PASSWORD`
-- `TO_EMAILS`
-
-GitHub Actions 将按照设定的时间间隔自动运行脚本。
-
-## 注意事项
-
-- 请确保已安装所有依赖库。
-- 确保环境变量或 GitHub Secrets 已正确配置。
-- 使用 Gmail 发送邮件时，可能需要设置应用专用密码。
+`.github/workflows/ci.yml` lints + runs tests on every push/PR.
+`.github/workflows/deploy.yml` builds the image and can trigger a one-shot
+`run` via `schedule`/`workflow_dispatch` (set SMTP secrets in GH Secrets).
