@@ -1,31 +1,24 @@
-# tests/test_email_sender.py
-import sys,os
-sys.path.append(os.path.abspath(os.path.dirname(__file__) + '/' + '..'))
+import smtplib
+from unittest.mock import patch
 
-import unittest
-from unittest.mock import patch, MagicMock
-from util.email_sender import EmailSender
+import pytest
+
+from hacknews.digest_builder import DigestMessage
+from hacknews.email_sender import EmailSender
 
 
-class TestEmailSender(unittest.TestCase):
-    """测试 EmailSender 类。"""
+@patch("smtplib.SMTP")
+def test_send_success(mock_smtp):
+    ctx = mock_smtp.return_value.__enter__.return_value
+    sender = EmailSender("host", 587, "a@x.com", "pw")
+    sender.send(DigestMessage(subject="S", html="<b>x</b>", plain="x"), ["to@x.com"])
+    ctx.sendmail.assert_called_once()
 
-    @patch('smtplib.SMTP')
-    def test_send_email_success(self, mock_smtp):
-        """测试成功发送邮件的情况。"""
-        smtp_instance = mock_smtp.return_value.__enter__.return_value
-        smtp_instance.sendmail.return_value = {}
 
-        email_sender = EmailSender('smtp.test.com', 587, 'user@test.com', 'password')
-        email_sender.send_email('Test Subject', 'Test Body', ['receiver@test.com'])
-        smtp_instance.sendmail.assert_called_once()
-
-    @patch('smtplib.SMTP')
-    def test_send_email_failure(self, mock_smtp):
-        """测试发送邮件失败的情况。"""
-        smtp_instance = mock_smtp.return_value.__enter__.return_value
-        smtp_instance.sendmail.side_effect = Exception('SMTP Error')
-
-        email_sender = EmailSender('smtp.test.com', 587, 'user@test.com', 'password')
-        with self.assertRaises(Exception):
-            email_sender.send_email('Test Subject', 'Test Body', ['receiver@test.com'])
+@patch("smtplib.SMTP")
+def test_send_raises_after_retries_on_transient_error(mock_smtp):
+    ctx = mock_smtp.return_value.__enter__.return_value
+    ctx.sendmail.side_effect = smtplib.SMTPServerDisconnected("down")
+    sender = EmailSender("host", 587, "a@x.com", "pw")
+    with pytest.raises(RuntimeError):
+        sender.send(DigestMessage("S", "<b>x</b>", "x"), ["to@x.com"], retries=2)
