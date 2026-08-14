@@ -87,3 +87,4 @@ class EmailSender:
                 logger.log_info(f"邮件已发送至: {to_emails}")
         except Exception as e:
             logger.log_exception()
+            raise  # 重新抛出异常，让调用方/CI 知晓发送失败
