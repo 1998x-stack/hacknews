@@ -55,12 +55,15 @@ class HackerNewsClient:
         data = self._get_json(ITEM_URL.format(id=item_id))
         if not data or data.get("deleted") or data.get("dead"):
             return None
+        raw_time = data.get("time") or 0
+        hours_old = (time.time() - raw_time) / 3600.0 if raw_time else 0.0
         return Story(
             id=data.get("id", item_id),
             title=data.get("title") or "",
             url=data.get("url"),
             score=data.get("score", 0),
             comments=data.get("descendants", 0),
+            hours_old=hours_old,
             author=data.get("by") or "",
             text=data.get("text"),
         )

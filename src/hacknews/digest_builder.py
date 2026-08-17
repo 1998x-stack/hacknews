@@ -16,7 +16,7 @@ class DigestMessage:
     plain: str
 
 
-def _plain_entry(story: Story) -> str:
+def _plain_entry(story: Story, include_text: bool) -> str:
     lines = [story.title or f"Story {story.id}"]
     if story.url:
         lines.append(story.url)
@@ -27,12 +27,12 @@ def _plain_entry(story: Story) -> str:
         meta.append(story.domain)
     lines.append(" · ".join(meta))
     lines.append(f"HN: {HN_ITEM.format(id=story.id)}")
-    if story.text:
+    if include_text and story.text:
         lines.append(story.text[:500])
     return "\n".join(lines)
 
 
-def _html_entry(story: Story) -> str:
+def _html_entry(story: Story, include_text: bool) -> str:
     title = html.escape(story.title or f"Story {story.id}")
     link = html.escape(story.url or HN_ITEM.format(id=story.id))
     meta = " · ".join(
@@ -48,18 +48,22 @@ def _html_entry(story: Story) -> str:
     if meta:
         out.append(f" <span>({meta})</span>")
     out.append(f"<br/><a href='{HN_ITEM.format(id=story.id)}'>HN discussion</a>")
-    if story.text:
+    if include_text and story.text:
         out.append(f"<blockquote>{html.escape(story.text[:500])}</blockquote>")
     out.append("</li>")
     return "".join(out)
 
 
-def build(job: DigestJob, stories: list[Story]) -> DigestMessage:
+def build(
+    job: DigestJob, stories: list[Story], include_self_text: bool | None = None
+) -> DigestMessage:
+    if include_self_text is None:
+        include_self_text = job.rules.include_self_text if job.rules else True
     plain_lines = [job.subject, "=" * len(job.subject), ""]
     for story in stories:
-        plain_lines.append(_plain_entry(story))
+        plain_lines.append(_plain_entry(story, include_self_text))
         plain_lines.append("")
-    items = "".join(_html_entry(s) for s in stories)
+    items = "".join(_html_entry(s, include_self_text) for s in stories)
     html_body = (
         f"<html><body><h2>{html.escape(job.subject)}</h2>"
         f"<ol>{items}</ol></body></html>"

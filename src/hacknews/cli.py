@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import signal
 import sys
 import time
 
@@ -103,11 +104,17 @@ def main(argv=None) -> int:
         scheduler = create_scheduler(cfg, hn, sender, ops)
         scheduler.start()
         start_health_server(cfg, ops)
+
+        # Graceful shutdown on SIGTERM (Docker/K8s) and SIGINT (Ctrl-C).
+        def _shutdown_scheduler(_signum, _frame):
+            raise KeyboardInterrupt
+
+        signal.signal(signal.SIGTERM, _shutdown_scheduler)
         try:
             while True:
                 time.sleep(3600)
         except KeyboardInterrupt:
-            scheduler.shutdown(wait=False)
+            scheduler.shutdown(wait=True)
         return 0
 
     return 0
