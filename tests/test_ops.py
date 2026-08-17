@@ -22,3 +22,9 @@ def test_notify_failure_throttled(tmp_path):
     )
     assert ops.notify_failure("j", "boom") is True
     assert ops.notify_failure("j", "boom again") is False
+
+
+def test_notify_failure_no_channel_never_throttles(tmp_path):
+    ops = OpsNotifier(str(tmp_path), OpsConfig())  # no sender, no alert emails
+    assert ops.notify_failure("j", "boom") is True
+    assert ops.notify_failure("j", "boom again") is True

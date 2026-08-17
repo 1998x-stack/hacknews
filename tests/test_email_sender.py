@@ -22,3 +22,13 @@ def test_send_raises_after_retries_on_transient_error(mock_smtp):
     sender = EmailSender("host", 587, "a@x.com", "pw")
     with pytest.raises(RuntimeError):
         sender.send(DigestMessage("S", "<b>x</b>", "x"), ["to@x.com"], retries=2)
+
+
+@patch("smtplib.SMTP")
+def test_send_does_not_retry_auth_error(mock_smtp):
+    ctx = mock_smtp.return_value.__enter__.return_value
+    ctx.sendmail.side_effect = smtplib.SMTPAuthenticationError(535, b"no")
+    sender = EmailSender("host", 587, "a@x.com", "pw")
+    with pytest.raises(smtplib.SMTPAuthenticationError):
+        sender.send(DigestMessage("S", "<b>x</b>", "x"), ["to@x.com"], retries=3)
+    assert ctx.sendmail.call_count == 1  # no retry on auth failure

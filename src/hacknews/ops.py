@@ -53,20 +53,22 @@ class OpsNotifier:
         return max(0.0, time.time() - (status.get("recorded_at") or 0))
 
     def notify_failure(self, job: str, error: str) -> bool:
+        # Without a configured alert channel there is nothing to throttle.
+        if self.email_sender is None or not self.ops.alert_emails:
+            return True
         now = time.time()
         interval = self.ops.min_alert_interval_minutes * 60.0
         if now - self._last_alert.get(job, 0.0) < interval:
             return False
-        if self.email_sender is not None and self.ops.alert_emails:
-            msg = DigestMessage(
-                subject=f"[HackNews] job '{job}' failed",
-                html=f"<p><b>{error}</b></p>",
-                plain=f"{job} failed:\n{error}",
-            )
-            try:
-                self.email_sender.send(msg, list(self.ops.alert_emails))
-            except Exception as exc:  # noqa: BLE001 - alert must never break the job
-                self._log_alert_failure(job, exc)
+        msg = DigestMessage(
+            subject=f"[HackNews] job '{job}' failed",
+            html=f"<p><b>{error}</b></p>",
+            plain=f"{job} failed:\n{error}",
+        )
+        try:
+            self.email_sender.send(msg, list(self.ops.alert_emails))
+        except Exception as exc:  # noqa: BLE001 - alert must never break the job
+            self._log_alert_failure(job, exc)
         self._last_alert[job] = now
         return True
 

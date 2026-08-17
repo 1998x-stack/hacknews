@@ -22,6 +22,8 @@ class EmailSender:
             try:
                 self._send_once(msg, to_emails)
                 return
+            except smtplib.SMTPAuthenticationError:
+                raise  # auth failures are hard - never retry them
             except (smtplib.SMTPServerDisconnected, smtplib.SMTPSenderRefused, OSError) as exc:
                 last_exc = exc
                 time.sleep(0.5 * (attempt + 1))
