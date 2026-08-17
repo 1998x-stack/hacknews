@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HackNews</title>
+  <meta name="description" content="HackNews — scheduled Hacker News digests, delivered by email.">
+  <style>
+    :root {
+      --bg: #f6f4ef;
+      --ink: #24211c;
+      --muted: #6b665c;
+      --accent: #c53b1f;   /* hacker-news orange */
+      --line: #e2ddd2;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+      line-height: 1.55;
+    }
+    .wrap { max-width: 680px; margin: 0 auto; padding: 64px 24px 80px; }
+    header { border-bottom: 1px solid var(--line); padding-bottom: 24px; }
+    .logo {
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 13px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent);
+    }
+    h1 { font-size: 44px; margin: 14px 0 6px; font-weight: 400; }
+    .sub { color: var(--muted); font-size: 18px; margin: 0; }
+    main { margin-top: 36px; }
+    h2 { font-size: 20px; font-weight: 600; margin: 32px 0 8px; }
+    p { margin: 0 0 12px; }
+    ul { padding-left: 20px; }
+    li { margin: 6px 0; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin-top: 16px;
+    }
+    pre {
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      font-size: 12.5px;
+      background: #1f1d19;
+      color: #f2eee6;
+      border-radius: 8px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      margin: 0;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    footer { margin-top: 48px; color: var(--muted); font-size: 13.5px; border-top: 1px solid var(--line); padding-top: 18px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">HackNews</div>
+      <h1>Scheduled Hacker News digests, by email.</h1>
+      <p class="sub">A production-grade pipeline that turns Hacker News metadata into clean, timely digests.</p>
+    </header>
+
+    <main>
+      <h2>What it does</h2>
+      <p>
+        Every scheduled run fetches the latest Hacker News stories from the HN API, applies
+        per-job selection rules, builds a compact digest, and sends it over SMTP — with
+        structured logs, ops alerts, and a health signal when things go wrong.
+      </p>
+      <ul>
+        <li>Config-driven jobs with cron schedules and custom selection rules</li>
+        <li>Selection by score, comment count, age, and keywords</li>
+        <li>Structured JSON logs and a last-success / readiness probe</li>
+        <li>Runs as a container or a one-shot CI job</li>
+      </ul>
+
+      <h2>Quick look</h2>
+      <div class="card">
+        <pre>hacknews doctor
+hacknews run morning_digest
+hacknews readiness
+hacknews serve</pre>
+      </div>
+
+      <h2>Source</h2>
+      <p>
+        <a href="https://github.com/1998x-stack/hacknews" target="_blank" rel="noopener">
+          github.com/1998x-stack/hacknews
+        </a>
+        — including config reference, deploy notes, and CI.
+      </p>
+    </main>
+
+    <footer>
+      Built with Python &middot; pydantic, APScheduler, SMTP. No external article scraping.
+    </footer>
+  </div>
+</body>
+</html>
