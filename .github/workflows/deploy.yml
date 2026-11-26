@@ -4,9 +4,15 @@ on:
     branches: [main]
   workflow_dispatch:
   schedule:
-    - cron: "0 8 * * *"
+    # 08:00 Asia/Shanghai, not 08:00 UTC
+    - cron: "0 0 * * *"
+
+permissions:
+  contents: read
+
 jobs:
   build:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,21 +23,42 @@ jobs:
           tags: hacknews:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
   run-once:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    needs: build
     runs-on: ubuntu-latest
+    concurrency:
+      group: hacknews-email-digest
+      cancel-in-progress: false
+    env:
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: ${{ secrets.SMTP_PORT }}
+      EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+      EMAIL_FROM_PASSWORD: ${{ secrets.EMAIL_FROM_PASSWORD }}
+      TO_EMAILS: ${{ secrets.TO_EMAILS }}
+      PROXY: ${{ secrets.PROXY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install ".[dev]"
+      - name: Validate email delivery secrets
+        shell: bash
+        run: |
+          missing=0
+          for key in SMTP_HOST EMAIL_FROM EMAIL_FROM_PASSWORD TO_EMAILS; do
+            if [[ -z "$(printenv "$key")" ]]; then
+              echo "::error::Missing Actions secret: $key"
+              missing=1
+            fi
+          done
+          if [[ -n "$SMTP_PORT" && ! "$SMTP_PORT" =~ ^[0-9]+$ ]]; then
+            echo "::error::SMTP_PORT must be numeric"
+            missing=1
+          fi
+          if (( missing > 0 )); then
+            exit 1
+          fi
       - name: Run morning digest
-        env:
-          SMTP_HOST: ${{ secrets.SMTP_HOST }}
-          SMTP_PORT: ${{ secrets.SMTP_PORT }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-          EMAIL_FROM_PASSWORD: ${{ secrets.EMAIL_FROM_PASSWORD }}
-          PROXY: ${{ secrets.PROXY }}
         run: hacknews run morning_digest
