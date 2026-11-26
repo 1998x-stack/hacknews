@@ -91,3 +91,33 @@ Persist the `state/` directory (last-success JSON) across restarts.
 `.github/workflows/ci.yml` lints + runs tests on every push/PR.
 `.github/workflows/deploy.yml` builds the image and can trigger a one-shot
 `run` via `schedule`/`workflow_dispatch` (set SMTP secrets in GH Secrets).
+
+## GitHub Actions scheduled delivery
+
+`.github/workflows/deploy.yml` runs `morning_digest` at **00:00 UTC
+(08:00 Asia/Shanghai)** each day. GitHub's scheduled execution is best-effort
+and can be delayed. The workflow also supports a manual `workflow_dispatch`,
+which **sends a real email**, and separately builds the image on pushes to
+`main`.
+
+Set these repository **Actions secrets** (Settings → Secrets and variables →
+Actions) before enabling real mail delivery:
+
+| Secret | Required | Description |
+| --- | --- | --- |
+| `SMTP_HOST` | Yes | SMTP host, e.g. your mail provider's SMTP server |
+| `EMAIL_FROM` | Yes | Actual sender/login email address |
+| `EMAIL_FROM_PASSWORD` | Yes | SMTP-specific/app password (never commit it) |
+| `TO_EMAILS` | Yes | One or more real comma-separated recipient emails |
+| `SMTP_PORT` | No | Defaults to 587 |
+| `PROXY` | No | Optional network proxy used for HN fetches |
+
+The workflow checks for missing required secrets and fails with a clear
+annotation **before** attempting SMTP. The repository config deliberately
+contains no fake production recipients or ops alert addresses. For local
+runs, supply `TO_EMAILS` in the environment (or configure real recipients
+locally).
+
+GitHub can disable scheduled workflows in inactive public repositories after
+60 days; review Actions if the daily digest stops. Workflow runs are not
+equivalent to commits on the default branch.

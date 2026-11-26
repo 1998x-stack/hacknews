@@ -3,12 +3,14 @@ settings:
   log_level: "INFO"
   max_recipients_per_scan: 100
 
-recipients:
-  - name: "Jane"
-    email: "jane@example.com"
+# Recipients must be supplied with TO_EMAILS at runtime.
+# Do not send production messages to demonstration addresses.
+recipients: []
 
 ops:
-  alert_emails: ["ops-alerts@example.com"]
+  # GitHub Actions reports job failures. Configure real alert addresses
+  # only when using the long-running local service.
+  alert_emails: []
   min_alert_interval_minutes: 60
 
 rules_defaults:
